@@ -1,0 +1,88 @@
+* rErlang edits & notes
+
+** install prerequisites
+
+*** erlang
+
+If using Ubuntu packages, erlang-dev is needed for erl_interface.
+
+*** R
+
+#+BEGIN_SRC
+    $ sudo apt-get install r-base
+#+END_SRC
+
+To install R packages from CRAN, the CRAN mirror to use must be set.  Change the url in doc/dot-Rprofile as desired, and then:
+
+#+BEGIN_SRC
+    $ cp doc/dot-Rprofile ~/.Rprofile
+#+END_SRC
+
+For the moment at least, R packages should be installed from within R, rather than via rErlang.  e.g.:
+
+#+BEGIN_SRC
+    $ R
+    > install.packages("forecast")
+    >
+#+END_SRC
+
+** edit src/Makefile
+
+Ensure the paths at the top of the file are correct.  Make sure the erl_interface version number is correct.
+
+#+BEGIN_SRC
+    BINDIR :=../bin
+    ERL_BASE := /usr/lib/erlang/lib/erl_interface-3.7.13
+    R_INCLUDE_DIR := /usr/share/R/include
+    R_HOME := /usr/lib/R
+#+END_SRC
+
+** build
+
+#+BEGIN_SRC
+    $ make
+#+END_SRC
+
+** run
+
+Example usage:
+
+#+BEGIN_SRC erlang
+
+    $ ./start_erl_node.sh
+    Erlang/OTP 18 [erts-7.0] [source] [64-bit] [async-threads:10] [kernel-poll:false]
+    Eshell V7.0  (abort with ^G)
+    
+    (node01@localhost)1> eri:start().
+    "."
+    true
+    
+    (node01@localhost)2> eri:connect().
+    {ok,0}
+    
+    (node01@localhost)3> eri:eval("x <- c(12,34,56,78,90)").
+    {ok,'REALSXP',[12.0,34.0,56.0,78.0,90.0]}
+    
+    (node01@localhost)4> eri:eval("mean(x)").
+    {ok,'REALSXP',[54.0]}
+    
+    (node01@localhost)5> eri:stop().
+    
+    =ERROR REPORT==== 14-Jul-2016::14:14:44 ===
+    Error in process <0.43.0> on node node01@localhost with exit value:
+    {badarg,[{erlang,binary_to_term,[<<131,104,2,100,0,2,111,107>>],[]},
+             {eri,loop,1,[{file,"eri.erl"},{line,68}]}]}
+    ** exception exit: badarg
+         in function  binary_to_term/1
+            called as binary_to_term(<<131,104,2,100,0,2,111,107>>)
+         in call from eri:loop/1 (eri.erl, line 68)
+    (node01@localhost)6>
+
+#+END_SRC
+
+Note that:
+
+- This is an interactive session.  Command #3 sets a variable x, then command #4 uses that variable.
+
+- eri:stop/0 causes a crash (on my todo list to fix).
+

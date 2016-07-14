@@ -2,7 +2,7 @@
 
 BINDIR :=../bin
 R_INCLUDE_DIR := /usr/share/R/include
-ERL_BASE := /usr/lib/erlang/lib/erl_interface-3.7.13
+ERL_BASE := /usr/lib/erlang/lib/erl_interface-3.8
 R_HOME := /usr/lib/R
 
 .erl.beam:
