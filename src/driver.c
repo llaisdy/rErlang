@@ -106,7 +106,7 @@ int mainloop(){
       }else if(strncmp(command,"stop", 3)==0){
 	resi = terminate();
 	if(resi){
-	  if(ei_x_encode_atom(&result,"ok")){
+          if(ei_x_encode_atom(&result,"ok") || ei_x_encode_long(&result,resi)){
 	  }
 	}else{
 	  if(ei_x_encode_atom(&result,"error")){
