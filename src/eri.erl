@@ -3,15 +3,10 @@
 -export([start/0, start/1, connect/0, eval/1, stop/0]).
 -export([init/1, parse/1, sum/2]).
 
-start()->	
-    Path = case os:cmd("echo $SENSOR_PATH") of
-	       "\n" -> 
-		   ".";
-	       SensorPath ->
-		   SensorPath--"\n"
-	   end,
-    erlang:display(Path),
-    start(Path++"/lib/rErlang/bin/ERI-0.1").
+-define(PRIV_DIR, "./priv/bin").
+
+start()->
+    start(?PRIV_DIR ++ "/ERI-0.1").
 
 start(ExtPrg) ->
     register(?MODULE, spawn_link(?MODULE, init, [ExtPrg])).
