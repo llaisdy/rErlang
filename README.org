@@ -1,6 +1,6 @@
-* rErlang edits & notes
+* rErlang
 
-** install prerequisites
+** installation prerequisites
 
 *** erlang
 
@@ -26,12 +26,11 @@ For the moment at least, R packages should be installed from within R, rather th
     >
 #+END_SRC
 
-** edit src/Makefile
+** edit c_src/Makefile
 
 Ensure the paths at the top of the file are correct.  Make sure the erl_interface version number is correct.
 
 #+BEGIN_SRC
-    BINDIR :=../bin
     ERL_BASE := /usr/lib/erlang/lib/erl_interface-3.7.13
     R_INCLUDE_DIR := /usr/share/R/include
     R_HOME := /usr/lib/R
@@ -67,22 +66,11 @@ Example usage:
     {ok,'REALSXP',[54.0]}
     
     (node01@localhost)5> eri:stop().
-    
-    =ERROR REPORT==== 14-Jul-2016::14:14:44 ===
-    Error in process <0.43.0> on node node01@localhost with exit value:
-    {badarg,[{erlang,binary_to_term,[<<131,104,2,100,0,2,111,107>>],[]},
-             {eri,loop,1,[{file,"eri.erl"},{line,68}]}]}
-    ** exception exit: badarg
-         in function  binary_to_term/1
-            called as binary_to_term(<<131,104,2,100,0,2,111,107>>)
-         in call from eri:loop/1 (eri.erl, line 68)
-    (node01@localhost)6>
+    stop
 
 #+END_SRC
 
 Note that:
 
 - This is an interactive session.  Command #3 sets a variable x, then command #4 uses that variable.
-
-- eri:stop/0 causes a crash (on my todo list to fix).
 
