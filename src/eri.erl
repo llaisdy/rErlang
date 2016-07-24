@@ -3,10 +3,8 @@
 -export([start/0, start/1, connect/0, eval/1, stop/0]).
 -export([init/1, parse/1, sum/2]).
 
--define(PRIV_DIR, "./priv/bin").
-
 start()->
-    start(?PRIV_DIR ++ "/ERI-0.1").
+    start(get_priv_dir() ++ "/bin/ERI-0.1").
 
 start(ExtPrg) ->
     register(?MODULE, spawn_link(?MODULE, init, [ExtPrg])).
@@ -45,6 +43,12 @@ sum(X,Y) ->
 
 
 %%%% private
+
+get_priv_dir() ->
+    case code:priv_dir(rerlang) of
+	{error, bad_name} -> "./priv";
+	Path -> Path
+    end.
 
 call_port(Msg) ->
     %% erlang:display("sending message: "),
