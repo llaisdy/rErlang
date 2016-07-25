@@ -21,10 +21,10 @@ eval(X)->
 stop() ->
     case call_port({stop}) of 
 	{ok} ->
-	    io:fwrite("terminate R session\n"),
+	    log("terminate R session~n"),
 	    ?MODULE ! stop;
 	{error} -> 
-	    io:fwrite("fail terminate R session\n"),
+	    log("fail terminate R session~n"),
 	    ?MODULE ! stop;
 	_ ->
 	    ?MODULE ! stop
@@ -50,9 +50,12 @@ get_priv_dir() ->
 	Path -> Path
     end.
 
+log(S) ->
+    log(S, []).
+log(S,L) ->
+    io:format(S,L).
+
 call_port(Msg) ->
-    %% erlang:display("sending message: "),
-    %% erlang:display(Msg),
     ?MODULE ! {call, self(), Msg},
     receive
 	{?MODULE, Result}->
@@ -65,12 +68,10 @@ loop(Port) ->
 	    Port ! {self(), {command, term_to_binary(Msg)}},
 	    receive
 		{Port, {data, Data}} ->
-		    %% erlang:display(Data),
 		    Caller ! {?MODULE, binary_to_term(Data)}
 	    end,
 	    loop(Port);
 	stop ->
-	    erlang:display("Now actually trying to stop"),
 	    Port ! {self(), close},
 	    receive
 		{Port, closed} ->
