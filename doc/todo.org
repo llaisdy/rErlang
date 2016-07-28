@@ -1,0 +1,7 @@
+* todo
+
+** tasks
+
+- rErlang should *never* freeze the erlang VM because of an R error
+- rErlang's driver.c should *always* return valid binaries
+- document the possible return values of eri:eval/1.
