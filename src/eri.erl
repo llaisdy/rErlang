@@ -68,7 +68,7 @@ loop(Port) ->
 	    Port ! {self(), {command, term_to_binary(Msg)}},
 	    receive
 		{Port, {data, Data}} ->
-		    Caller ! {?MODULE, binary_to_term(Data)}
+		    Caller ! {?MODULE, safe_b2t(Data)}
 	    end,
 	    loop(Port);
 	stop ->
@@ -79,4 +79,13 @@ loop(Port) ->
 	    end;
 	{'EXIT', Port, Reason} ->
 	    exit({port_terminated, Reason})
+    end.
+
+safe_b2t(Bin) ->
+    try binary_to_term(Bin) of
+	Term ->
+	     Term
+    catch
+	ExcClass:ExcPattern ->
+	    {error, ExcClass, ExcPattern}
     end.

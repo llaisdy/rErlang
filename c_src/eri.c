@@ -36,8 +36,6 @@ int erl_eval_convert(long inexp, ei_x_buff *result){
     type = -1;
   }
 
-  fprintf(stderr,"TYPE: %d\r\n",type);
-
   if(type == REALSXP){    
     if(len > 0){
       encode_list_header(result, type, len);
@@ -84,7 +82,6 @@ int erl_eval_convert(long inexp, ei_x_buff *result){
 void encode_list_header(ei_x_buff* result, int type, unsigned int len) {
   char type_str[16];
   type_to_string(type, type_str, sizeof(type_str));
-  fprintf(stderr,"TYPE_STR: %s\r\n",type_str);
 
   if (ei_x_encode_atom(result, "ok") ||
       ei_x_encode_atom(result, type_str) ||
@@ -95,7 +92,6 @@ void encode_list_header(ei_x_buff* result, int type, unsigned int len) {
 void encode_long(ei_x_buff* result, int type, long exp) {
   char type_str[16];
   type_to_string(type, type_str, sizeof(type_str));
-  fprintf(stderr,"TYPE_STR: %s\r\n",type_str);
 
   if (ei_x_encode_atom(result, "ok") ||
       ei_x_encode_atom(result, type_str) ||
