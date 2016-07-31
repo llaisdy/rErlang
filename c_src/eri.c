@@ -17,16 +17,12 @@ long parse(const char *s){
   return r_parse(s);
 }
 
-long erl_eval(long exp){
-  long e;  
+int erl_eval_convert(long inexp, ei_x_buff *result){
+  long exp;
   int er = 0;
  
-  e = r_eval(exp, &er);
+  exp = r_eval(inexp, &er);
 
-  return e;
-}
-
-int convert(long exp, ei_x_buff *result){
   SEXP es;
   int type, i;
   double *vd;
@@ -35,8 +31,8 @@ int convert(long exp, ei_x_buff *result){
   es = L2SEXP(exp);
   type = TYPEOF(es);
   unsigned int len = LENGTH(es);
-  //fprintf(stderr,"TYPEOF: %d\n",type);
-  //fprintf(stderr,"LENGTH: %d\n",len);
+  fprintf(stderr,"TYPEOF: %d\r\n",type);
+  fprintf(stderr,"LENGTH: %d\r\n",len);
 
   if(type == REALSXP){    
     if(len > 0){   

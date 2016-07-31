@@ -81,9 +81,8 @@ int mainloop(){
     if(strncmp(command, "eval", 3)==0){      
       if(ei_x_new_with_version(&result) || ei_x_encode_tuple_header(&result,3)){
       }
-      if (ei_decode_long(buf, &index, &pstr)) return 6;     
-      resl = erl_eval(pstr);
-      convert(resl,&result);      
+      if (ei_decode_long(buf, &index, &pstr)) return 6;
+      erl_eval_convert(pstr, &result);
       
     }else{
       if(ei_x_new_with_version(&result) || ei_x_encode_tuple_header(&result,2)){
