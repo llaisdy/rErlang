@@ -20,19 +20,21 @@ long parse(const char *s){
 int erl_eval_convert(long inexp, ei_x_buff *result){
   long exp;
   int er = 0;
- 
-  exp = r_eval(inexp, &er);
-
   SEXP es;
   int type, i;
   double *vd;
   int *vi;  
+  unsigned int len;
 
-  es = L2SEXP(exp);
-  type = TYPEOF(es);
-  unsigned int len = LENGTH(es);
-  fprintf(stderr,"TYPEOF: %d\r\n",type);
-  fprintf(stderr,"LENGTH: %d\r\n",len);
+  exp = r_eval(inexp, &er);
+
+  if (er == 0) { // all ok
+    es = L2SEXP(exp);
+    type = TYPEOF(es);
+    len = LENGTH(es);
+  } else {       // R error
+    type = -1;
+  }
 
   if(type == REALSXP){    
     if(len > 0){   
@@ -78,6 +80,10 @@ int erl_eval_convert(long inexp, ei_x_buff *result){
       }
       if(ei_x_encode_empty_list(result)){
       }
+    }
+  } else if (type == -1) {
+    if(ei_x_encode_atom(result,"ok") || ei_x_encode_atom(result,"ERROR") ||
+       ei_x_encode_long(result,exp)){
     }    
   }else{
     if(ei_x_encode_atom(result,"ok") || ei_x_encode_atom(result,"OTHER") ||
