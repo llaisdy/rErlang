@@ -36,6 +36,12 @@ int erl_eval_convert(long inexp, ei_x_buff *result){
     type = -1;
   }
 
+  fprintf(stderr,"TYPE: %d\r\n",type);
+
+  char type_str[16];
+  type_to_string(type, type_str, sizeof(type_str));
+  fprintf(stderr,"TYPE_STR: %s\r\n",type_str);
+  
   if(type == REALSXP){    
     if(len > 0){   
       if(ei_x_encode_atom(result,"ok") || ei_x_encode_atom(result,"REALSXP") || 
@@ -91,4 +97,25 @@ int erl_eval_convert(long inexp, ei_x_buff *result){
     }
   }  
   return 0;
+}
+
+void type_to_string(int type, char* type_str, int buffersize) {
+  // for SEXP types see:
+  // https://cran.r-project.org/doc/manuals/r-release/R-ints.html#SEXPTYPEs
+  const char* type_strings[] = {"NILSXP", "SYMSXP", "LISTSXP", "CLOSXP",
+				"ENVSXP", "PROMSXP", "LANGSXP", "SPECIALSXP",
+				"BUILTINSXP", "CHARSXP", "LGLSXP",
+				"UNKNOWNSXP", "UNKNOWNSXP",
+				"INTSXP", "REALSXP", "CPLXSXP", "STRSXP",
+				"DOTSXP", "ANYSXP", "VECSXP", "EXPRSXP",
+				"BCODESXP", "EXTPTRSXP", "WEAKREFSXP",
+				"RAWSXP", "S4SXP"};
+  if (!type_str || buffersize < 12)
+    return;
+  if (type < 0 || type > 25) {
+    strncpy(type_str, "UNKNOWNSXP", buffersize-1);
+  } else {
+    strncpy(type_str, type_strings[type], buffersize-1);
+  }
+  type_str[buffersize-1] = '\0';
 }
