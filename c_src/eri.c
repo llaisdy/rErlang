@@ -38,15 +38,9 @@ int erl_eval_convert(long inexp, ei_x_buff *result){
 
   fprintf(stderr,"TYPE: %d\r\n",type);
 
-  char type_str[16];
-  type_to_string(type, type_str, sizeof(type_str));
-  fprintf(stderr,"TYPE_STR: %s\r\n",type_str);
-  
   if(type == REALSXP){    
-    if(len > 0){   
-      if(ei_x_encode_atom(result,"ok") || ei_x_encode_atom(result,"REALSXP") || 
-	 ei_x_encode_list_header(result,len)){
-      }
+    if(len > 0){
+      encode_list_header(result, type, len);
       vd = REAL(es);
       i = 0;      
       while(i < len){
@@ -58,9 +52,7 @@ int erl_eval_convert(long inexp, ei_x_buff *result){
     }    
   }else if(type == INTSXP){    
     if(len > 0){
-      if(ei_x_encode_atom(result,"ok") || ei_x_encode_atom(result,"INTSXP") || 
-	 ei_x_encode_list_header(result,len)){
-      }
+      encode_list_header(result, type, len);
       vi = INTEGER(es);
       i = 0;      
       while(i < len){	
@@ -70,15 +62,9 @@ int erl_eval_convert(long inexp, ei_x_buff *result){
       if(ei_x_encode_empty_list(result)){
       }
     }   
-  }else if(type == VECSXP){
-    if(ei_x_encode_atom(result,"ok") || ei_x_encode_atom(result,"VECSXP") ||
-       ei_x_encode_long(result,exp)){
-    }
   }else if(type == STRSXP){
     if(len>0){
-      if(ei_x_encode_atom(result,"ok") || ei_x_encode_atom(result,"STRSXP") || 
-	 ei_x_encode_list_header(result,len)){
-      }
+      encode_list_header(result, type, len);
       i = 0;
       while(i < len){	
 	ei_x_encode_string(result,CHAR(STRING_ELT(es,i)));
@@ -87,16 +73,34 @@ int erl_eval_convert(long inexp, ei_x_buff *result){
       if(ei_x_encode_empty_list(result)){
       }
     }
-  } else if (type == -1) {
-    if(ei_x_encode_atom(result,"ok") || ei_x_encode_atom(result,"ERROR") ||
-       ei_x_encode_long(result,exp)){
-    }    
-  }else{
-    if(ei_x_encode_atom(result,"ok") || ei_x_encode_atom(result,"OTHER") ||
-       ei_x_encode_long(result,exp)){
-    }
-  }  
+  } else if (type == VECSXP) {
+    encode_long(result, type, exp);
+  } else {
+    encode_long(result, type, exp);
+  }
   return 0;
+}
+
+void encode_list_header(ei_x_buff* result, int type, unsigned int len) {
+  char type_str[16];
+  type_to_string(type, type_str, sizeof(type_str));
+  fprintf(stderr,"TYPE_STR: %s\r\n",type_str);
+
+  if (ei_x_encode_atom(result, "ok") ||
+      ei_x_encode_atom(result, type_str) ||
+      ei_x_encode_list_header(result, len)) {
+  }
+}
+
+void encode_long(ei_x_buff* result, int type, long exp) {
+  char type_str[16];
+  type_to_string(type, type_str, sizeof(type_str));
+  fprintf(stderr,"TYPE_STR: %s\r\n",type_str);
+
+  if (ei_x_encode_atom(result, "ok") ||
+      ei_x_encode_atom(result, type_str) ||
+      ei_x_encode_long(result, exp)) {
+  }
 }
 
 void type_to_string(int type, char* type_str, int buffersize) {
@@ -112,7 +116,9 @@ void type_to_string(int type, char* type_str, int buffersize) {
 				"RAWSXP", "S4SXP"};
   if (!type_str || buffersize < 12)
     return;
-  if (type < 0 || type > 25) {
+  if (type == -1) {
+    strncpy(type_str, "ERRORSXP", buffersize-1);
+  } else if (type < 0 || type > 25) {
     strncpy(type_str, "UNKNOWNSXP", buffersize-1);
   } else {
     strncpy(type_str, type_strings[type], buffersize-1);
