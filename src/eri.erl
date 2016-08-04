@@ -32,7 +32,7 @@ stop() ->
 
 init(ExtPrg)->
     process_flag(trap_exit, true),
-    Port = open_port({spawn, ExtPrg}, [{packet,2}, binary]),
+    Port = open_port({spawn, ExtPrg}, [{packet,4}, binary]),
     loop(Port).
 
 parse(X)->
