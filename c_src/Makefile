@@ -1,6 +1,6 @@
 BINDIR :=../priv/bin
 R_INCLUDE_DIR := /usr/share/R/include
-ERL_BASE := /usr/lib/erlang/lib/erl_interface-3.8
+ERL_BASE ?= $(shell erl -noshell -s init stop -eval "io:format(\"~s\", [code:lib_dir(erl_interface)]).")
 R_HOME := /usr/lib/R
 
 CSRC=$(shell ls *.c)
