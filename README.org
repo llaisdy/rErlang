@@ -28,19 +28,31 @@ For the moment at least, R packages should be installed from within R, rather th
 
 ** edit c_src/Makefile
 
-Ensure the paths at the top of the file are correct.  Make sure the erl_interface version number is correct.
+Ensure the R paths at the top of the file are correct:
 
 #+BEGIN_SRC
-    ERL_BASE := /usr/lib/erlang/lib/erl_interface-3.7.13
     R_INCLUDE_DIR := /usr/share/R/include
     R_HOME := /usr/lib/R
 #+END_SRC
 
 ** build
 
+*** with make
+
 #+BEGIN_SRC
     $ make
 #+END_SRC
+
+This outputs erlang beam files to ./ebin/.
+
+*** with rebar3
+
+#+BEGIN_SRC
+    $ rebar3 compile
+#+END_SRC
+
+This creates a new directory _build/ containing all artefacts.
+
 
 ** run
 
@@ -48,7 +60,8 @@ Example usage:
 
 #+BEGIN_SRC erlang
 
-    $ ./start_erl_node.sh
+    $ ./start_erl_node.sh  # if built with make
+    $ rebar3 shell  # if built with rebar3
     Erlang/OTP 18 [erts-7.0] [source] [64-bit] [async-threads:10] [kernel-poll:false]
     Eshell V7.0  (abort with ^G)
     
