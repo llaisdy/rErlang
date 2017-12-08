@@ -53,7 +53,6 @@ This outputs erlang beam files to ./ebin/.
 
 This creates a new directory _build/ containing all artefacts.
 
-
 ** run
 
 Example usage:
@@ -87,3 +86,38 @@ Note that:
 
 - This is an interactive session.  Command #3 sets a variable x, then command #4 uses that variable.
 
+** warnings and caveats
+
+*** NaN and Infinity float values
+
+R and Erlang use slightly different definitions of floating-point number.  In particular, the R floating-point number type defines NaN (not a number") and infinity values; Erlang's does not.  An R NaN, sent from R to Erlang, becomes invalid data, and crashed Erlang's binary_to_term/1.  See:
+
+Why is this erlang binary failing binary_to_term/1?
+https://stackoverflow.com/questions/38684941/why-is-this-erlang-binary-failing-binary-to-term-1
+
+To protect Erlang from NaNs (and Infinities), the R function safetify(x, default) is provided, in priv/rscripts.utils.R.  This takes a vector x and a default.  It returns a copy of x, with all instances of NaN replaced by the default.
+
+Used in an R session:
+
+#+BEGIN_SRC erlang
+
+    > x <- c(1, 2, 3, NaN, 5)
+    > x
+    [1]   1   2   3 NaN   5
+    > mean(x)
+    [1] NaN
+    > y <- safetify(x, 0)
+    > y
+    [1] 1 2 3 0 5
+    > mean(y)
+    [1] 2.2
+
+#+END_SRC
+
+Used in an erlang session:
+
+#+BEGIN_SRC erlang
+
+    %% TODO
+
+#+END_SRC
