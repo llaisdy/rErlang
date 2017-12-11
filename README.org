@@ -99,18 +99,21 @@ To protect Erlang from NaNs (and Infinities), the R function safetify(x, default
 
 Used in an R session:
 
-#+BEGIN_SRC erlang
+#+BEGIN_SRC R
 
-    > x <- c(1, 2, 3, NaN, 5)
-    > x
-    [1]   1   2   3 NaN   5
-    > mean(x)
-    [1] NaN
-    > y <- safetify(x, 0)
-    > y
-    [1] 1 2 3 0 5
-    > mean(y)
-    [1] 2.2
+> x <- c(1, 2, 3, NA, 4, 5)
+> x
+[1]  1  2  3 NA  4  5
+
+> mean(x)
+[1] NA
+
+> y <- safetify(x, 0)
+> y
+[1] 1 2 3 0 4 5
+
+> mean(y)
+[1] 2.5
 
 #+END_SRC
 
@@ -118,6 +121,22 @@ Used in an erlang session:
 
 #+BEGIN_SRC erlang
 
-    %% TODO
+    %% source the utils script
+    1> eri:eval("source(\"utils.R\")").
+    {ok,'VECSXP',19941672}
+
+    %% Erlang floats do not have NA
+    2> eri:eval("x <- c(1, 2, 3, NA, 4, 5)").
+    {error,error,badarg}
+
+    3> eri:eval("x").
+    {error,error,badarg}
+
+    %% safetify replaces the NA with 0
+    4> eri:eval("y <- safetify(x, 0)").
+    {ok,'REALSXP',[1.0,2.0,3.0,0.0,4.0,5.0]}
+
+    5> eri:eval("mean(y)").
+    {ok,'REALSXP',[2.5]}
 
 #+END_SRC
