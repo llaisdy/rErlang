@@ -2,7 +2,14 @@
 *.o
 *.plt
 *~
+.erlang.cookie
 .eunit
 .rebar
+.rebar3
+_build
 deps
 erl_crash.dump
+log
+logs
+rebar.lock
+rebar3.crashdump
