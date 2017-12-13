@@ -101,19 +101,19 @@ Used in an R session:
 
 #+BEGIN_SRC R
 
-> x <- c(1, 2, 3, NA, 4, 5)
-> x
-[1]  1  2  3 NA  4  5
-
-> mean(x)
-[1] NA
-
-> y <- safetify(x, 0)
-> y
-[1] 1 2 3 0 4 5
-
-> mean(y)
-[1] 2.5
+    > x <- c(1, 2, 3, NA, 4, 5)
+    > x
+    [1]  1  2  3 NA  4  5
+    
+    > mean(x)
+    [1] NA
+    
+    > y <- safetify(x, 0)
+    > y
+    [1] 1 2 3 0 4 5
+    
+    > mean(y)
+    [1] 2.5
 
 #+END_SRC
 
@@ -140,3 +140,60 @@ Used in an erlang session:
     {ok,'REALSXP',[2.5]}
 
 #+END_SRC
+
+*** eri:eval/1 return types
+
+The erlang function eri:eval/1 has the following typespec:
+
+#+BEGIN_SRC erlang
+-type r_sexp_type() :: atom().
+-type r_result() :: list() | non_neg_integer().
+-spec eval(string()) -> {ok, r_sexp_type(), r_result()} | {error, error, badarg}.
+#+END_SRC
+
+**** {ok, r_sexp_type(), r_result()}
+
+The R SEXP types are listed at
+
+    https://cran.r-project.org/doc/manuals/r-release/R-ints.html#SEXPTYPEs
+
+and in eri.c type_to_string(), lines 105f.
+
+The conversion of a result from R to erlang is done in eri.c erl_eval_convert().  If an R result type is STRSXP (string), REALSXP (real number) or INTSXP (integer), the R result is converted and sent through to erlang:
+
+#+BEGIN_SRC erlang
+
+    1> eri:eval("s <- \"qweasd\"").
+    {ok,'STRSXP',["qweasd"]}
+    
+    2> eri:eval("i <- 5").
+    {ok,'REALSXP',[5.0]}
+    
+    3> eri:eval("as.integer(x)").
+    {ok,'INTSXP',[5]}
+
+#+END_SRC
+
+n.b.: erlang integers seem to be converted into real numbers before being sent into R (see #2 above).
+
+If an R result has any other type, the result is not evaluated but the raw pointer is sent back.  e.g., with booleans:
+
+#+BEGIN_SRC erlang 
+
+    4> eri:eval("b <- c(TRUE, FALSE, TRUE)").
+    {ok,'LGLSXP',33836256}
+    5> eri:eval("b <- TRUE").
+    {ok,'LGLSXP',16012664}
+
+#+END_SRC
+
+**** error, error, badarg
+
+This error is returned if an R result contains floating-point numbers that are not valid in erlang (i.e., NA or Infinity):
+
+#+BEGIN_SRC erlang 
+    6> eri:eval("mean(c())").
+    {error,error,badarg}
+#+END_SRC 
+
+see eri.erl:safe_b2t/1
