@@ -12,6 +12,9 @@ start(ExtPrg) ->
 connect() -> 
     call_port({setup}).
 
+-type r_sexp_type() :: atom().
+-type r_result() :: list() | non_neg_integer().
+-spec eval(string()) -> {ok, r_sexp_type(), r_result()} | {error, error, badarg}.
 eval(X)->    
     case parse(X) of
 	{ok,Result} -> call_port({eval,Result});
