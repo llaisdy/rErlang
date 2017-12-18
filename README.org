@@ -197,3 +197,21 @@ This error is returned if an R result contains floating-point numbers that are n
 #+END_SRC 
 
 see eri.erl:safe_b2t/1
+
+*** maximum message sizes
+
+eri:init/1 opens a port specifying a 4-byte size header for message packets:
+
+#+BEGIN_SRC erlang 
+    Port = open_port({spawn, ExtPrg}, [{packet,4}, binary]),
+#+END_SRC
+
+This puts an upper bound on messages going through the port (in either direction: erlang->R or R->erlang).  It is a very high upper bound of 4,294,967,295 bytes --- or 3 gigabytes.
+
+A maximum buffer size of 5500 bytes is further specified, for the erlang->R buffer, in driver.c (line 10):
+
+#+BEGIN_SRC C 
+    #define BUF_SIZE 5500
+#+END_SRC
+
+Rerlang does not limit the size of the R->erlang buffer, other than the upper bound given by the 4-byte header.
