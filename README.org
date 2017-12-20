@@ -146,9 +146,9 @@ Used in an erlang session:
 The erlang function eri:eval/1 has the following typespec:
 
 #+BEGIN_SRC erlang
--type r_sexp_type() :: atom().
--type r_result() :: list() | non_neg_integer().
--spec eval(string()) -> {ok, r_sexp_type(), r_result()} | {error, error, badarg}.
+    -type r_sexp_type() :: atom().
+    -type r_result() :: list() | non_neg_integer().
+    -spec eval(string()) -> {ok, r_sexp_type(), r_result()} | {error, error, badarg}.
 #+END_SRC
 
 **** {ok, r_sexp_type(), r_result()}
@@ -215,3 +215,23 @@ A maximum buffer size of 5500 bytes is further specified, for the erlang->R buff
 #+END_SRC
 
 Rerlang does not limit the size of the R->erlang buffer, other than the upper bound given by the 4-byte header.
+
+*** erlang->R timeout
+
+Some malformed R strings can cause the R session to hang.  Consequently, there is a timeout, defined as 3000 milliseconds, for messages sent into the R session from erlang.  The timeout is defined at eri.erl line 6:
+
+#+BEGIN_SRC erlang 
+    -define(TIMEOUT, 3000).
+#+END_SRC 
+
+If the R session takes longer than 3000 milliseconds to respond, the port will exit with the message:
+
+#+BEGIN_SRC erlang 
+    {port_terminated, timeout}
+#+END_SRC 
+
+Because these strings effectively terminate the R session (losing all data), it would be better to catch known malformations before they sent into the R port.  Known strings are pattern matched in the eri:eval head, e.g.:
+
+#+BEGIN_SRC erlang 
+    eval("") -> {error, empty_string};
+#+END_SRC 
