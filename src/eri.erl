@@ -3,6 +3,8 @@
 -export([start/0, start/1, connect/0, eval/1, stop/0]).
 -export([init/1, parse/1, sum/2]).
 
+-define(TIMEOUT, 3000).
+
 start()->
     start(get_priv_dir() ++ "/bin/ERI-0.1").
 
@@ -15,7 +17,7 @@ connect() ->
 -type r_sexp_type() :: atom().
 -type r_result() :: list() | non_neg_integer().
 -spec eval(string()) -> {ok, r_sexp_type(), r_result()} | {error, error, badarg}.
-%% eval("") -> {error, empty_string}; %% uncomment after timeout implemented
+eval("") -> {error, empty_string};
 eval(X)->    
     case parse(X) of
 	{ok,Result} -> call_port({eval,Result});
@@ -73,6 +75,10 @@ loop(Port) ->
 	    receive
 		{Port, {data, Data}} ->
 		    Caller ! {?MODULE, safe_b2t(Data)}
+	    after
+		?TIMEOUT ->
+		    Caller ! {?MODULE, {error, timeout}},
+		    exit({port_terminated, timeout})
 	    end,
 	    loop(Port);
 	stop ->
