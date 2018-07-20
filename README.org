@@ -28,19 +28,30 @@ For the moment at least, R packages should be installed from within R, rather th
 
 ** edit c_src/Makefile
 
-Ensure the paths at the top of the file are correct.  Make sure the erl_interface version number is correct.
+Ensure the R paths at the top of the file are correct:
 
 #+BEGIN_SRC
-    ERL_BASE := /usr/lib/erlang/lib/erl_interface-3.7.13
     R_INCLUDE_DIR := /usr/share/R/include
     R_HOME := /usr/lib/R
 #+END_SRC
 
 ** build
 
+*** with make
+
 #+BEGIN_SRC
     $ make
 #+END_SRC
+
+This outputs erlang beam files to ./ebin/.
+
+*** with rebar3
+
+#+BEGIN_SRC
+    $ rebar3 compile
+#+END_SRC
+
+This creates a new directory _build/ containing all artefacts.
 
 ** run
 
@@ -48,7 +59,8 @@ Example usage:
 
 #+BEGIN_SRC erlang
 
-    $ ./start_erl_node.sh
+    $ ./start_erl_node.sh  # if built with make
+    $ rebar3 shell  # if built with rebar3
     Erlang/OTP 18 [erts-7.0] [source] [64-bit] [async-threads:10] [kernel-poll:false]
     Eshell V7.0  (abort with ^G)
     
@@ -74,3 +86,144 @@ Note that:
 
 - This is an interactive session.  Command #3 sets a variable x, then command #4 uses that variable.
 
+** warnings and caveats
+
+*** NaN and Infinity float values
+
+R and Erlang use slightly different definitions of floating-point number.  In particular, the R floating-point number type defines NaN (not a number") and infinity values; Erlang's does not.  An R NaN, sent from R to Erlang, becomes invalid data, and crashed Erlang's binary_to_term/1.  See:
+
+Why is this erlang binary failing binary_to_term/1?
+https://stackoverflow.com/questions/38684941/why-is-this-erlang-binary-failing-binary-to-term-1
+
+To protect Erlang from NaNs (and Infinities), the R function safetify(x, default) is provided, in priv/rscripts.utils.R.  This takes a vector x and a default.  It returns a copy of x, with all instances of NaN replaced by the default.
+
+Used in an R session:
+
+#+BEGIN_SRC R
+
+    > x <- c(1, 2, 3, NA, 4, 5)
+    > x
+    [1]  1  2  3 NA  4  5
+    
+    > mean(x)
+    [1] NA
+    
+    > y <- safetify(x, 0)
+    > y
+    [1] 1 2 3 0 4 5
+    
+    > mean(y)
+    [1] 2.5
+
+#+END_SRC
+
+Used in an erlang session:
+
+#+BEGIN_SRC erlang
+
+    %% source the utils script
+    1> eri:eval("source(\"utils.R\")").
+    {ok,'VECSXP',19941672}
+
+    %% Erlang floats do not have NA
+    2> eri:eval("x <- c(1, 2, 3, NA, 4, 5)").
+    {error,error,badarg}
+
+    3> eri:eval("x").
+    {error,error,badarg}
+
+    %% safetify replaces the NA with 0
+    4> eri:eval("y <- safetify(x, 0)").
+    {ok,'REALSXP',[1.0,2.0,3.0,0.0,4.0,5.0]}
+
+    5> eri:eval("mean(y)").
+    {ok,'REALSXP',[2.5]}
+
+#+END_SRC
+
+*** eri:eval/1 return types
+
+The erlang function eri:eval/1 has the following typespec:
+
+#+BEGIN_SRC erlang
+    -type r_sexp_type() :: atom().
+    -type r_result() :: list() | non_neg_integer().
+    -spec eval(string()) -> {ok, r_sexp_type(), r_result()} | {error, error, badarg}.
+#+END_SRC
+
+**** {ok, r_sexp_type(), r_result()}
+
+The R SEXP types are listed at
+
+    https://cran.r-project.org/doc/manuals/r-release/R-ints.html#SEXPTYPEs
+
+and in eri.c type_to_string(), lines 105f.
+
+The conversion of a result from R to erlang is done in eri.c erl_eval_convert().  If an R result type is STRSXP (string), REALSXP (real number) or INTSXP (integer), the R result is converted and sent through to erlang:
+
+#+BEGIN_SRC erlang
+
+    1> eri:eval("s <- \"qweasd\"").
+    {ok,'STRSXP',["qweasd"]}
+    
+    2> eri:eval("i <- 5").
+    {ok,'REALSXP',[5.0]}
+    
+    3> eri:eval("as.integer(x)").
+    {ok,'INTSXP',[5]}
+
+#+END_SRC
+
+n.b.: erlang integers seem to be converted into real numbers before being sent into R (see #2 above).
+
+If an R result has any other type, the result is not evaluated but the raw pointer is sent back.  e.g., with booleans:
+
+#+BEGIN_SRC erlang 
+
+    4> eri:eval("b <- c(TRUE, FALSE, TRUE)").
+    {ok,'LGLSXP',33836256}
+    5> eri:eval("b <- TRUE").
+    {ok,'LGLSXP',16012664}
+
+#+END_SRC
+
+**** error, error, badarg
+
+This error is returned if an R result contains floating-point numbers that are not valid in erlang (i.e., NA or Infinity):
+
+#+BEGIN_SRC erlang 
+    6> eri:eval("mean(c())").
+    {error,error,badarg}
+#+END_SRC 
+
+see eri.erl:safe_b2t/1
+
+*** maximum message sizes
+
+eri:init/1 opens a port specifying a 4-byte size header for message packets:
+
+#+BEGIN_SRC erlang 
+    Port = open_port({spawn, ExtPrg}, [{packet,4}, binary]),
+#+END_SRC
+
+This puts an upper bound on messages going through the port (in either direction: erlang->R or R->erlang).  It is a very high upper bound of 4,294,967,295 bytes --- or 3 gigabytes.
+
+*** erlang->R timeout
+
+Some malformed R strings can cause the R session to hang.  Consequently, there is a timeout, defined as 3000 milliseconds, for messages sent into the R session from erlang.  The timeout is defined at eri.erl line 6:
+
+#+BEGIN_SRC erlang 
+    -define(TIMEOUT, 3000).
+#+END_SRC 
+
+If the R session takes longer than 3000 milliseconds to respond, the port will exit with the message:
+
+#+BEGIN_SRC erlang 
+    {port_terminated, timeout}
+#+END_SRC 
+
+Because these strings effectively terminate the R session (losing all data), it would be better to catch known malformations before they sent into the R port.  Known strings are pattern matched in the eri:eval head, e.g.:
+
+#+BEGIN_SRC erlang 
+    eval("") -> {error, empty_string};
+#+END_SRC 

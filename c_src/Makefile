@@ -1,7 +1,8 @@
-BINDIR :=../priv/bin
 R_INCLUDE_DIR := /usr/share/R/include
-ERL_BASE := /usr/lib/erlang/lib/erl_interface-3.8
 R_HOME := /usr/lib/R
+
+BINDIR :=../priv/bin
+ERL_BASE ?= $(shell erl -noshell -s init stop -eval "io:format(\"~s\", [code:lib_dir(erl_interface)]).")
 
 CSRC=$(shell ls *.c)
 HED=$(shell ls *.h)
